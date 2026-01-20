@@ -1,10 +1,16 @@
-# python-module-rank
+# Python Page Rank
 
 Static dependency analysis and PageRank-style importance scoring for Python modules.
 
 This tool scans a Python codebase, builds a directed import graph between modules, and computes a PageRank-like score indicating which modules are most *structurally important* based on how much other code depends on them.
 
 No code execution and no imports.
+
+---
+
+### Quickstart
+```python python_page_rank.py /path/to/project``` (or leave blank to run on current path)
+
 
 ---
 
@@ -103,11 +109,11 @@ python python_page_rank.py /path/to/project
 Example output:
 
 ```
-Module                                      In   Out   PageRank
-----------------------------------------------------------------
-MyApp.authentication.models            5     1   0.2134
-MyApp.authentication.forms             1     3   0.0712
-MyApp.payments.models                  4     0   0.1987
+Module                                     LOC  Importers   PageRank
+----------------------------------------------------------------------
+MyApp\authentication\models.py              29         12   0.114471
+MyApp\common\utils.py                       66          6   0.094118
+MyApp\payments\models.py                   168         15   0.053272
 ...
 ```
 
