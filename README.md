@@ -124,8 +124,9 @@ MyApp\payments\models.py                   168         15   0.053272
 The tool is intended to be run from the command line.
 
 ### Syntax
-
-python python_page_rank.py [path] [--n] [--alpha] [--iters] [--json]
+```
+python python_page_rank.py [path] [--n N] [--alpha A] [--iters I] [--json]
+```
 
 ### Arguments
 
