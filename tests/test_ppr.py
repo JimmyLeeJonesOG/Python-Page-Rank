@@ -3,7 +3,7 @@ import subprocess
 import sys
 import textwrap
 import pytest
-import python_page_rank.src.python_page_rank.cli as cli
+import src.python_page_rank.cli as cli
 from pathlib import Path
 
 
