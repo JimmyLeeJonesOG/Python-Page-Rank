@@ -6,9 +6,7 @@ This tool scans a Python codebase, builds a directed import graph between module
 
 No code execution and no imports.
 
----
-
-### Quickstart
+## Quickstart
 Install from PyPI: 
 ```
 pip install python-page-rank
@@ -22,7 +20,65 @@ Run from src:
 python cli.py /path/to/project
 ```
 
----
+## Example
+
+```
+python-page-rank /path/to/project
+```
+
+output:
+
+```
+Module                                     LOC  Importers   PageRank
+----------------------------------------------------------------------
+MyApp\authentication\models.py              29         12   0.114471
+MyApp\common\utils.py                       66          6   0.094118
+MyApp\payments\models.py                   168         15   0.053272
+...
+```
+
+## CLI usage
+
+The tool is intended to be run from the command line.
+
+### Syntax
+```
+python-page-rank [path] [--n N] [--alpha A] [--iters I] [--json] [--include-init] 
+```
+
+### Arguments
+
+path  
+Project root directory to scan.  
+Optional. Defaults to the current directory (`.`).
+
+--n N  
+Number of top-ranked files to display.  
+Optional. Default is `10`.
+
+--alpha A  
+PageRank damping factor.  
+Optional. Default is `0.85`.
+
+--iters ITERS  
+Number of PageRank iterations to run.  
+Optional. Default is `50`.
+
+--json  
+Prints results as JSON instead of a text table.
+
+--include-init  
+Include `__init__.py` files in the output.  
+By default, package initializer files are hidden to reduce noise.
+
+### Examples
+
+Analyze the current directory with default settings: `python-page-rank`  
+Analyze a specific project directory: `python-page-rank MyApp`  
+Show only the top 10 ranked files: `python-page-rank --n 10`  
+Use a custom damping factor and iteration count: `python-page-rank --alpha 0.9 --iters 100`  
+Analyze a directory and output results as JSON: `python-page-rank MyApp --json`  
+Combine options: `python-page-rank MyApp --n 20 --alpha 0.8 --iters 75 --json`  
 
 ## What it does
 
@@ -41,8 +97,6 @@ Typical uses:
 - estimate blast radius of changes
 - understand large or unfamiliar codebases
 
----
-
 ## What it does **not** do (by design)
 
 - Execute or import any project code
@@ -51,8 +105,6 @@ Typical uses:
 - Guess ambiguous dependencies
 
 This is a **conservative static analyzer**.
-
----
 
 ## How imports are handled
 
@@ -70,12 +122,11 @@ All resolved to absolute module paths and mapped to files when possible.
 - `from . import models`   
 - `from .. import utils`
 
-These produce **no edge** in the graph.
+These produce **no edge** in the graph.   
+Relative imports with an explicit module (e.g. from .models import X) are handled.
 
 **Why:**  
 The AST provides no absolute module path (`node.module is None`). Resolving these requires guessing project roots and can be wrong in multi-root or namespace-package layouts. This behavior is deliberate and covered by tests.
-
----
 
 ## Directory handling
 
@@ -92,8 +143,6 @@ This allows it to work on:
 - Django / FastAPI projects
 - repos with multiple top-level packages
 
----
-
 ## PageRank details
 
 - Standard iterative PageRank
@@ -106,82 +155,12 @@ A module is "important" if many important modules depend on it.
 
 This measures **structural importance**, not runtime usage frequency.
 
----
-
-## Example
-
-```
-python-page-rank /path/to/project
-```
-
-Example output:
-
-```
-Module                                     LOC  Importers   PageRank
-----------------------------------------------------------------------
-MyApp\authentication\models.py              29         12   0.114471
-MyApp\common\utils.py                       66          6   0.094118
-MyApp\payments\models.py                   168         15   0.053272
-...
-```
-
----
-
-## CLI usage
-
-The tool is intended to be run from the command line.
-
-### Syntax
-```
-python-page-rank [path] [--n N] [--alpha A] [--iters I] [--json] [--include-init] 
-```
-
-### Arguments
-
-path  
-Project root directory to scan.  
-Optional. Defaults to the current directory (`.`).
-
---n N
-Number of top-ranked files to display.  
-Optional. Default is `10`.
-
---alpha A
-PageRank damping factor.  
-Optional. Default is `0.85`.
-
---iters ITERS
-Number of PageRank iterations to run.  
-Optional. Default is `50`.
-
---json  
-Prints results as JSON instead of a text table.
-
---include-init  
-Include `__init__.py` files in the output.  
-By default, package initializer files are hidden to reduce noise.
-
----
-
-### Examples
-
-Analyze the current directory with default settings: `python-page-rank`  
-Analyze a specific project directory: `python-page-rank MyApp`  
-Show only the top 10 ranked files: `python-page-rank --n 10`  
-Use a custom damping factor and iteration count: `python-page-rank --alpha 0.9 --iters 100`  
-Analyze a directory and output results as JSON: `python-page-rank MyApp --json`  
-Combine options: `python-page-rank MyApp --n 20 --alpha 0.8 --iters 75 --json`  
-
----
-
-### Notes
+## Notes
 
 - The analysis is fully static
 - No code is executed
 - Imports are resolved via AST parsing only
 - `PYTHONPATH` and runtime environment are ignored
-
----
 
 ## Tests
 
@@ -199,8 +178,6 @@ Run tests with:
 python -m pytest
 ```
 
----
-
 ## Limitations (read before filing issues)
 
 - Relative imports without explicit module paths are ignored
@@ -210,13 +187,9 @@ python -m pytest
 
 These are **tradeoffs**, not bugs.
 
----
-
 ## License
 
 MIT License
-
----
 
 ## Disclaimer / Caveat
 
