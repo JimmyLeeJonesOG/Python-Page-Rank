@@ -9,6 +9,12 @@ No code execution and no imports.
 ---
 
 ### Quickstart
+Install from PyPI: `pip install python-page-rank`  
+- Run on a project directory: `python-page-rank .`    
+- Show the top 5 ranked modules: `python-page-rank . --n 5`    
+- Emit JSON instead of a table: `python-page-rank . --json` 
+
+Run from src: 
 ```python cli.py /path/to/project``` (or leave blank to run on current path)
 
 ---
@@ -124,7 +130,7 @@ The tool is intended to be run from the command line.
 
 ### Syntax
 ```
-python cli.py [path] [--n N] [--alpha A] [--iters I] [--json]
+python cli.py [path] [--n N] [--alpha A] [--iters I] [--json] [--include-init] 
 ```
 
 ### Arguments
@@ -133,20 +139,24 @@ path
 Project root directory to scan.  
 Optional. Defaults to the current directory (`.`).
 
---n  
+--n N
 Number of top-ranked files to display.  
 Optional. Default is `10`.
 
---alpha  
+--alpha A
 PageRank damping factor.  
 Optional. Default is `0.85`.
 
---iters  
+--iters ITERS
 Number of PageRank iterations to run.  
 Optional. Default is `50`.
 
 --json  
 Prints results as JSON instead of a text table.
+
+--include-init  
+Include `__init__.py` files in the output.  
+By default, package initializer files are hidden to reduce noise.
 
 ---
 
