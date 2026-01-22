@@ -9,8 +9,7 @@ No code execution and no imports.
 ---
 
 ### Quickstart
-```python python_page_rank.py /path/to/project``` (or leave blank to run on current path)
-
+```python cli.py /path/to/project``` (or leave blank to run on current path)
 
 ---
 
@@ -103,7 +102,7 @@ This measures **structural importance**, not runtime usage frequency.
 ## Example
 
 ```
-python python_page_rank.py /path/to/project
+python cli.py /path/to/project
 ```
 
 Example output:
@@ -125,7 +124,7 @@ The tool is intended to be run from the command line.
 
 ### Syntax
 ```
-python python_page_rank.py [path] [--n N] [--alpha A] [--iters I] [--json]
+python cli.py [path] [--n N] [--alpha A] [--iters I] [--json]
 ```
 
 ### Arguments
@@ -153,12 +152,12 @@ Prints results as JSON instead of a text table.
 
 ### Examples
 
-Analyze the current directory with default settings: `python python_page_rank.py`  
-Analyze a specific project directory: `python python_page_rank.py MyApp`  
-Show only the top 10 ranked files: `python python_page_rank.py --n 10`  
-Use a custom damping factor and iteration count: `python python_page_rank.py --alpha 0.9 --iters 100`  
-Analyze a directory and output results as JSON: `python python_page_rank.py MyApp --json`  
-Combine options: `python python_page_rank.py MyApp --n 20 --alpha 0.8 --iters 75 --json`  
+Analyze the current directory with default settings: `python cli.py`  
+Analyze a specific project directory: `python cli.py MyApp`  
+Show only the top 10 ranked files: `python cli.py --n 10`  
+Use a custom damping factor and iteration count: `python cli.py --alpha 0.9 --iters 100`  
+Analyze a directory and output results as JSON: `python cli.py MyApp --json`  
+Combine options: `python cli.py MyApp --n 20 --alpha 0.8 --iters 75 --json`  
 
 ---
 
@@ -209,4 +208,3 @@ MIT License
 ## Disclaimer / Caveat
 
 If you need aggressive inference, this tool is intentionally not that.
-

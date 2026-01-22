@@ -1,0 +1,6 @@
+__pycache__
+*cache
+dist
+*.egg-info
+*.api
+test_pip.py

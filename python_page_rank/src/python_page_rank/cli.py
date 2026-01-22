@@ -7,15 +7,19 @@ import sys
 from collections import defaultdict
 
 # directories to skip when scanning the repo
-IGNORED_DIRS = {".idea", ".git", ".venv", "venv", "__pycache__", "node_modules", "dist", "build"}
+IGNORED_DIRS = {".idea", ".git", ".venv", "venv",
+                "__pycache__", "node_modules", "dist", "build"}
+
 
 def iterate_py_files(root: str):
     root = os.path.abspath(root)
     for dirpath, dirnames, filenames in os.walk(root):
-        dirnames[:] = [dirname for dirname in dirnames if dirname not in IGNORED_DIRS]
+        dirnames[:] = [
+            dirname for dirname in dirnames if dirname not in IGNORED_DIRS]
         for filename in filenames:
             if filename.endswith(".py"):
                 yield os.path.abspath(os.path.join(dirpath, filename))
+
 
 def path_to_module(root: str, path: str):
     relative_path = os.path.relpath(path, root)
@@ -25,6 +29,7 @@ def path_to_module(root: str, path: str):
     if parts[-1] == "__init__":
         parts = parts[:-1]
     return ".".join([part for part in parts if part])
+
 
 def detect_import_roots(root: str):
     roots = {os.path.abspath(root)}
@@ -90,8 +95,10 @@ def resolve_import(modules_to_files, current_module: str, node):
         out.extend(best_repo_matches(modules_to_files, base))
         # also try base + imported name (from pkg import sub)
         for node_names in node.names:
-            out.extend(best_repo_matches(modules_to_files, base + "." + node_names.name))
+            out.extend(best_repo_matches(
+                modules_to_files, base + "." + node_names.name))
     return out
+
 
 def best_repo_matches(modules_to_files, name: str):
     # If exact module exists, return it.
@@ -104,6 +111,7 @@ def best_repo_matches(modules_to_files, name: str):
         if prefix in modules_to_files:
             return [prefix]
     return []
+
 
 def build_graph(root: str):
     modules_to_files = build_module_index(root)
@@ -131,6 +139,7 @@ def build_graph(root: str):
                         nodes.add(target_file)
 
     return nodes, edges
+
 
 def pagerank(nodes, edges, alpha=0.85, iters=50):
     nodes = list(nodes)
@@ -169,7 +178,8 @@ def pagerank(nodes, edges, alpha=0.85, iters=50):
             new[j] += alpha * s
 
         # handle dangling nodes (no outlinks)
-        dangling_sum = sum(r[i] for i in range(number_of_nodes) if len(outlinks[i]) == 0)
+        dangling_sum = sum(r[i] for i in range(
+            number_of_nodes) if len(outlinks[i]) == 0)
         if dangling_sum:
             add = alpha * dangling_sum / number_of_nodes
             new = [v + add for v in new]
@@ -178,12 +188,14 @@ def pagerank(nodes, edges, alpha=0.85, iters=50):
 
     return {nodes[i]: r[i] for i in range(number_of_nodes)}
 
+
 def count_loc(path: str):
     try:
         with open(path, "r", encoding="utf-8") as f:
             return sum(1 for _ in f)
     except Exception:
         return 0
+
 
 def count_importers(edges):
     importers = defaultdict(set)
@@ -192,8 +204,11 @@ def count_importers(edges):
             importers[target].add(source)
     return {k: len(v) for k, v in importers.items()}
 
+
 def build_arg_parser():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--include-init", action="store_true", 
+                        help="Include __init__.py files in output (default: hidden).")
     parser.add_argument("path", nargs="?", default=".",
                         help="Project root to scan (default: current directory).")
     parser.add_argument("--n", type=int, default=10,
@@ -205,6 +220,7 @@ def build_arg_parser():
     parser.add_argument("--json", action="store_true",
                         help="Emit results as JSON instead of a text table.")
     return parser
+
 
 def main():
     parser = build_arg_parser()
@@ -219,7 +235,9 @@ def main():
 
     rows = []
     for path, score in pr.items():
-        rel = os.path.relpath(path, root)
+        rel = os.path.relpath(path, root)        
+        if (not args.include_init) and os.path.basename(rel) == "__init__.py":
+            continue
         rows.append({
             "path": rel,
             "loc": count_loc(path),
@@ -236,7 +254,9 @@ def main():
         print(f"{'Module':40} {'LOC':>5} {'Importers':>10} {'PageRank':>10}")
         print("-" * 70)
         for r in rows:
-            print(f"{r['path'][:40]:40} {r['loc']:5d} {r['importers']:10d} {r['pagerank']:10.6f}")
+            print(
+                f"{r['path'][:40]:40} {r['loc']:5d} {r['importers']:10d} {r['pagerank']:10.6f}")
+
 
 if __name__ == "__main__":
     main()

@@ -3,9 +3,8 @@ import subprocess
 import sys
 import textwrap
 import pytest
-import python_page_rank
+import python_page_rank.src.python_page_rank.cli as cli
 from pathlib import Path
-from python_page_rank import build_arg_parser
 
 
 def write_file(path: Path, content: str = ""):
@@ -16,8 +15,8 @@ def write_file(path: Path, content: str = ""):
 def test_path_to_module_handles_init_and_nested():
     # path_to_module should strip .py, drop __init__, and join with dots.
     root = "/project"
-    assert python_page_rank.path_to_module(root, os.path.join(root, "pkg", "__init__.py")) == "pkg"
-    assert python_page_rank.path_to_module(root, os.path.join(root, "pkg", "sub", "mod.py")) == "pkg.sub.mod"
+    assert cli.path_to_module(root, os.path.join(root, "pkg", "__init__.py")) == "pkg"
+    assert cli.path_to_module(root, os.path.join(root, "pkg", "sub", "mod.py")) == "pkg.sub.mod"
 
 
 def test_detect_import_roots_includes_src_and_subdirs(tmp_path: Path):
@@ -27,7 +26,7 @@ def test_detect_import_roots_includes_src_and_subdirs(tmp_path: Path):
     (tmp_path / "pkg").mkdir()
     (tmp_path / ".git").mkdir()
     (tmp_path / "__pycache__").mkdir()
-    roots = python_page_rank.detect_import_roots(tmp_path)
+    roots = cli.detect_import_roots(tmp_path)
     expected = {os.path.abspath(tmp_path), os.path.abspath(tmp_path / "src"), os.path.abspath(tmp_path / "pkg")}
     assert expected.issubset(set(roots))
     ignored_suffixes = {os.sep + ".git", os.sep + ".venv", os.sep + "venv", os.sep + "__pycache__"}
@@ -41,7 +40,7 @@ def test_iterate_py_files_skips_common_dirs(tmp_path: Path):
     write_file(keep / "file.py", "x = 1")
     write_file(skip, "ignored = True")
 
-    found = list(python_page_rank.iterate_py_files(tmp_path))
+    found = list(cli.iterate_py_files(tmp_path))
     assert keep / "file.py" in map(Path, found)
     assert all(Path(p) != skip for p in found)
 
@@ -53,7 +52,7 @@ def test_build_graph_handles_relative_imports(tmp_path: Path):
     write_file(tmp_path / "pkg" / "b.py", "from .c import CONST\n")
     write_file(tmp_path / "pkg" / "c.py", "VALUE = 1\n")
 
-    nodes, edges = python_page_rank.build_graph(tmp_path)
+    nodes, edges = cli.build_graph(tmp_path)
 
     a = str(tmp_path / "pkg" / "a.py")
     b = str(tmp_path / "pkg" / "b.py")
@@ -69,7 +68,7 @@ def test_build_graph_skips_non_repo_imports(tmp_path: Path):
     # Imports pointing outside the repo should be ignored in the graph.
     write_file(tmp_path / "main.py", "import sys\nimport not_in_repo\n")
 
-    nodes, edges = python_page_rank.build_graph(tmp_path)
+    nodes, edges = cli.build_graph(tmp_path)
 
     main = str(tmp_path / "main.py")
     assert main in nodes
@@ -93,7 +92,7 @@ def test_build_graph_handles_multi_level_packages(tmp_path: Path):
         "from pkg.sub import util\n",
     )
 
-    nodes, edges = python_page_rank.build_graph(tmp_path)
+    nodes, edges = cli.build_graph(tmp_path)
 
     main = str(tmp_path / "pkg" / "main.py")
     util = str(tmp_path / "pkg" / "sub" / "util.py")
@@ -114,7 +113,7 @@ def test_multi_level_relative_import_level_two_resolves(tmp_path: Path):
     write_file(tmp_path / "pkg" / "sub" / "__init__.py")
     write_file(tmp_path / "pkg" / "sub" / "api.py", "from ..models import X\n")
 
-    nodes, edges = python_page_rank.build_graph(tmp_path)
+    nodes, edges = cli.build_graph(tmp_path)
 
     api = str(tmp_path / "pkg" / "sub" / "api.py")
     models = str(tmp_path / "pkg" / "models.py")
@@ -132,7 +131,7 @@ def test_relative_import_without_module_is_ignored(tmp_path: Path):
     write_file(tmp_path / "pkg" / "models.py", "VALUE = 1\n")
     write_file(tmp_path / "pkg" / "api.py", "from . import models\n")
 
-    nodes, edges = python_page_rank.build_graph(tmp_path)
+    nodes, edges = cli.build_graph(tmp_path)
 
     api = str(tmp_path / "pkg" / "api.py")
     models = str(tmp_path / "pkg" / "models.py")
@@ -146,7 +145,7 @@ def test_relative_import_level_too_high_is_ignored(tmp_path: Path):
     write_file(tmp_path / "pkg" / "__init__.py")
     write_file(tmp_path / "pkg" / "api.py", "from ...models import X\n")
 
-    nodes, edges = python_page_rank.build_graph(tmp_path)
+    nodes, edges = cli.build_graph(tmp_path)
 
     api = str(tmp_path / "pkg" / "api.py")
     assert api in nodes
@@ -158,7 +157,7 @@ def test_import_package_targets_init_when_only_init_exists(tmp_path: Path):
     write_file(tmp_path / "pkg" / "__init__.py", "VALUE = 1\n")
     write_file(tmp_path / "main.py", "import pkg\n")
 
-    nodes, edges = python_page_rank.build_graph(tmp_path)
+    nodes, edges = cli.build_graph(tmp_path)
 
     main = str(tmp_path / "main.py")
     pkg_init = str(tmp_path / "pkg" / "__init__.py")
@@ -173,7 +172,7 @@ def test_import_subpackage_resolves_to_subpkg_init(tmp_path: Path):
     write_file(tmp_path / "pkg" / "subpkg" / "__init__.py", "VALUE = 1\n")
     write_file(tmp_path / "main.py", "from pkg import subpkg\n")
 
-    nodes, edges = python_page_rank.build_graph(tmp_path)
+    nodes, edges = cli.build_graph(tmp_path)
 
     main = str(tmp_path / "main.py")
     pkg_init = str(tmp_path / "pkg" / "__init__.py")
@@ -192,7 +191,7 @@ def test_build_graph_skips_files_with_syntax_errors(tmp_path: Path):
     write_file(tmp_path / "app" / "good.py", "import app.util\n")
     write_file(tmp_path / "app" / "bad.py", "def broken(:\n")  # syntax error
 
-    nodes, edges = python_page_rank.build_graph(tmp_path)
+    nodes, edges = cli.build_graph(tmp_path)
 
     good = str(tmp_path / "app" / "good.py")
     util = str(tmp_path / "app" / "util.py")
@@ -215,7 +214,7 @@ def test_repeated_imports_dedup_edge_and_importer(tmp_path: Path):
         "import app.util\nimport app.util\nfrom app import util\n",
     )
 
-    _, edges = python_page_rank.build_graph(tmp_path)
+    _, edges = cli.build_graph(tmp_path)
 
     main = str(tmp_path / "app" / "main.py")
     util = str(tmp_path / "app" / "util.py")
@@ -225,7 +224,7 @@ def test_repeated_imports_dedup_edge_and_importer(tmp_path: Path):
     # to its __init__.py.
     assert edges[main] == {app_init, util}
 
-    importers = python_page_rank.count_importers(edges)
+    importers = cli.count_importers(edges)
     assert importers[util] == 1
 
 
@@ -238,7 +237,7 @@ def test_alias_imports_behave_like_non_aliased(tmp_path: Path):
         "import app.util as u\nfrom app import util as v\n",
     )
 
-    _, edges = python_page_rank.build_graph(tmp_path)
+    _, edges = cli.build_graph(tmp_path)
 
     main = str(tmp_path / "main.py")
     util = str(tmp_path / "app" / "util.py")
@@ -253,7 +252,7 @@ def test_import_star_treated_as_direct_module_import(tmp_path: Path):
     write_file(tmp_path / "pkg" / "mod.py", "VALUE = 1\n")
     write_file(tmp_path / "main.py", "from pkg.mod import *\n")
 
-    _, edges = python_page_rank.build_graph(tmp_path)
+    _, edges = cli.build_graph(tmp_path)
 
     main = str(tmp_path / "main.py")
     mod = str(tmp_path / "pkg" / "mod.py")
@@ -268,7 +267,7 @@ def test_module_index_prefers_shorter_path_on_duplicates(tmp_path: Path):
     write_file(tmp_path / "pkg" / "mod.py", "VALUE = 1\n")
     write_file(tmp_path / "src" / "pkg" / "mod.py", "VALUE = 2\n")
 
-    modules = python_page_rank.build_module_index(tmp_path)
+    modules = cli.build_module_index(tmp_path)
     chosen = modules["pkg.mod"]
     shorter = str(tmp_path / "pkg" / "mod.py")
     longer = str(tmp_path / "src" / "pkg" / "mod.py")
@@ -302,8 +301,8 @@ def test_relative_import_edges_are_stable_across_roots(tmp_path: Path):
             stripped.add((os.path.join(*src_parts), os.path.join(*tgt_parts)))
         return stripped
 
-    _, edges_root = python_page_rank.build_graph(tmp_path)
-    _, edges_pkg = python_page_rank.build_graph(tmp_path / "CalendarApp")
+    _, edges_root = cli.build_graph(tmp_path)
+    _, edges_pkg = cli.build_graph(tmp_path / "CalendarApp")
 
     pairs_root = strip_prefix(edge_pairs(tmp_path, edges_root), "CalendarApp")
     pairs_pkg = edge_pairs(tmp_path / "CalendarApp", edges_pkg)
@@ -317,14 +316,14 @@ def test_pagerank_ranks_high_import_target_highest():
     nodes = {"a", "b", "c"}
     edges = {"a": {"b"}, "b": {"c"}, "c": {"b"}}
 
-    pr = python_page_rank.pagerank(nodes, edges, alpha=0.85, iters=100)
+    pr = cli.pagerank(nodes, edges, alpha=0.85, iters=100)
 
     assert pr["b"] > pr["c"] > pr["a"]
 
 
 def test_pagerank_handles_empty_graph():
     # Empty graph should return an empty score mapping, not error.
-    assert python_page_rank.pagerank(set(), {}) == {}
+    assert cli.pagerank(set(), {}) == {}
 
 
 def test_main_outputs_top_modules_sorted(tmp_path: Path, capfd: pytest.CaptureFixture[str]):
@@ -334,10 +333,10 @@ def test_main_outputs_top_modules_sorted(tmp_path: Path, capfd: pytest.CaptureFi
     write_file(tmp_path / "app" / "a.py", "import app.util\n")
     write_file(tmp_path / "app" / "b.py", "import app.util\n")
     write_file(tmp_path / "app" / "c.py", "import app.util\nimport app.b\n")
-    total_nodes = len(python_page_rank.build_graph(tmp_path)[0])
+    total_nodes = len(cli.build_graph(tmp_path)[0])
 
     # Run via module entrypoint to cover CLI printing.
-    subprocess.check_call([sys.executable, str(Path(python_page_rank.__file__).resolve()), str(tmp_path), "--n", "5"])
+    subprocess.check_call([sys.executable, str(Path(cli.__file__).resolve()), str(tmp_path), "--n", "5"])
     out, _ = capfd.readouterr()
 
     lines = [line for line in out.strip().splitlines() if line]
@@ -367,7 +366,7 @@ def test_main_respects_result_limit(tmp_path: Path, capfd: pytest.CaptureFixture
     write_file(tmp_path / "pkg" / "one.py", "")
     write_file(tmp_path / "pkg" / "two.py", "import pkg.one\n")
 
-    subprocess.check_call([sys.executable, str(Path(python_page_rank.__file__).resolve()), str(tmp_path), "--n", "1"])
+    subprocess.check_call([sys.executable, str(Path(cli.__file__).resolve()), str(tmp_path), "--n", "1"])
     out, _ = capfd.readouterr()
     lines = [line for line in out.strip().splitlines() if line]
     # header + separator + one result
@@ -377,13 +376,13 @@ def test_main_respects_result_limit(tmp_path: Path, capfd: pytest.CaptureFixture
 def test_count_loc_missing_file_returns_zero(tmp_path: Path):
     # Missing files should not raise and should report 0 LOC.
     missing = tmp_path / "absent.py"
-    assert python_page_rank.count_loc(missing) == 0
+    assert cli.count_loc(missing) == 0
 
 
 def test_count_importers_counts_unique_sources():
     # count_importers should tally unique importer modules per target.
     edges = {"a": {"b", "c"}, "b": {"c"}, "c": set()}
-    counts = python_page_rank.count_importers(edges)
+    counts = cli.count_importers(edges)
     assert counts["b"] == 1
     assert counts["c"] == 2
 
@@ -391,17 +390,17 @@ def test_count_importers_counts_unique_sources():
 def test_best_repo_matches_exact_and_prefix_and_missing():
     # exact match should return the name
     modules = {"pkg": "/path/pkg.py", "pkg.sub": "/path/pkg/sub.py", "other": "/path/other.py"}
-    assert python_page_rank.best_repo_matches(modules, "pkg.sub") == ["pkg.sub"]
+    assert cli.best_repo_matches(modules, "pkg.sub") == ["pkg.sub"]
 
     # prefix fallback should return the closest existing prefix
-    assert python_page_rank.best_repo_matches(modules, "pkg.sub.deep.more") == ["pkg.sub"]
+    assert cli.best_repo_matches(modules, "pkg.sub.deep.more") == ["pkg.sub"]
 
     # unknown should return empty
-    assert python_page_rank.best_repo_matches(modules, "doesnotexist") == []
+    assert cli.best_repo_matches(modules, "doesnotexist") == []
 
 
 def test_cli_defaults():
-    parser = build_arg_parser()
+    parser = cli.build_arg_parser()
     args = parser.parse_args([])
 
     assert args.path == "."
@@ -412,7 +411,7 @@ def test_cli_defaults():
     
     
 def test_cli_all_parameters():
-    parser = build_arg_parser()
+    parser = cli.build_arg_parser()
     args = parser.parse_args([
         "MyApp",
         "--n", "20",
@@ -426,3 +425,19 @@ def test_cli_all_parameters():
     assert args.alpha == 0.8
     assert args.iters == 75
     assert args.json is True
+
+
+
+def test_cli_hides_init_by_default(tmp_path, capfd):
+    subprocess.check_call([sys.executable, str(Path(cli.__file__).resolve()), str(tmp_path)])
+    out, _ = capfd.readouterr()
+    assert "__init__.py" not in out
+
+
+def test_cli_include_init_flag_shows_init(tmp_path, capfd):
+    (tmp_path / "pkg").mkdir()
+    (tmp_path / "pkg" / "__init__.py").write_text("X = 1\n")
+    (tmp_path / "pkg" / "a.py").write_text("import pkg\n")
+    subprocess.check_call([sys.executable, str(Path(cli.__file__).resolve()), str(tmp_path), "--include-init"])    
+    out, _ = capfd.readouterr()
+    assert "__init__.py" in out
