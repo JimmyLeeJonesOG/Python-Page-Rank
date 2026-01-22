@@ -9,13 +9,18 @@ No code execution and no imports.
 ---
 
 ### Quickstart
-Install from PyPI: `pip install python-page-rank`  
+Install from PyPI: 
+```
+pip install python-page-rank
+```
 - Run on a project directory: `python-page-rank .`    
 - Show the top 5 ranked modules: `python-page-rank . --n 5`    
 - Emit JSON instead of a table: `python-page-rank . --json` 
 
 Run from src: 
-```python cli.py /path/to/project``` (or leave blank to run on current path)
+```
+python cli.py /path/to/project
+```
 
 ---
 
@@ -62,10 +67,8 @@ All resolved to absolute module paths and mapped to files when possible.
 
 ### Intentionally ignored
 
-```
-from . import models
-from .. import utils
-```
+- `from . import models`   
+- `from .. import utils`
 
 These produce **no edge** in the graph.
 
@@ -108,7 +111,7 @@ This measures **structural importance**, not runtime usage frequency.
 ## Example
 
 ```
-python cli.py /path/to/project
+python-page-rank /path/to/project
 ```
 
 Example output:
@@ -130,7 +133,7 @@ The tool is intended to be run from the command line.
 
 ### Syntax
 ```
-python cli.py [path] [--n N] [--alpha A] [--iters I] [--json] [--include-init] 
+python-page-rank [path] [--n N] [--alpha A] [--iters I] [--json] [--include-init] 
 ```
 
 ### Arguments
@@ -162,12 +165,12 @@ By default, package initializer files are hidden to reduce noise.
 
 ### Examples
 
-Analyze the current directory with default settings: `python cli.py`  
-Analyze a specific project directory: `python cli.py MyApp`  
-Show only the top 10 ranked files: `python cli.py --n 10`  
-Use a custom damping factor and iteration count: `python cli.py --alpha 0.9 --iters 100`  
-Analyze a directory and output results as JSON: `python cli.py MyApp --json`  
-Combine options: `python cli.py MyApp --n 20 --alpha 0.8 --iters 75 --json`  
+Analyze the current directory with default settings: `python-page-rank`  
+Analyze a specific project directory: `python-page-rank MyApp`  
+Show only the top 10 ranked files: `python-page-rank --n 10`  
+Use a custom damping factor and iteration count: `python-page-rank --alpha 0.9 --iters 100`  
+Analyze a directory and output results as JSON: `python-page-rank MyApp --json`  
+Combine options: `python-page-rank MyApp --n 20 --alpha 0.8 --iters 75 --json`  
 
 ---
 
